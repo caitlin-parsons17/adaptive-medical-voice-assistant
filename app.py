@@ -157,18 +157,30 @@ def process_user_turn(user_text: str, pause_seconds: int):
     else:
         st.session_state.repeat_counter += 1
         st.session_state.inferred_state = "Unrecognised input, Offering clarification"
-        st.session_state.system_message = "Sorry, I didn't catch that. You can tap a button on screen or say the day you prefer."
+        st.session_state.system_message = f"I didn't match a valid option. Currently available: {SLOTS[st.session_state.slot_index]}. "
+    "Please say 'yes', 'no', or tap a button on screen."
     
 # UI layout
 col_main, col_inspector = st.columns([2, 1])
 
 with col_main:
     st.title("GP Appointment Voice & Screen Assistant")
-    st.caption("Prototype: Adaptive Speech Pacing & Multimodal Confirmation (Interaction Layer)")
-
+    st.caption("(simulated clinic schedule)")
     # spoken and visual prompt card
     st.info(f"**Assistant Says ({st.session_state.speech_rate}x speed):**\n\n### {st.session_state.system_message}")
     speak_text(st.session_state.system_message, st.session_state.speech_rate)
+
+    # Simulated Voice Input & Pause Simulator
+    st.subheader("Simulate Spoken Input & Pause")
+    with st.form("turn_form", clear_on_submit=True):
+        simulated_speech = st.text_input("Simulated User Speech")
+        pause_duration = st.slider("Simulated Silence / Pause Before Speaking (seconds):", 0, 20, 2)
+        submitted = st.form_submit_button("Send Turn")
+        if submitted:
+            process_user_turn(simulated_speech, pause_duration)
+            st.rerun()
+
+    st.divider()
 
     # Multimodal Visual Controls
     st.subheader("Visual Options")
@@ -211,16 +223,7 @@ with col_main:
                 process_user_turn("no", 0)
                 st.rerun()
 
-    st.divider()
-    # Simulated Voice Input & Pause Simulator
-    st.subheader("Simulate Spoken Input & Pause")
-    with st.form("turn_form", clear_on_submit=True):
-        simulated_speech = st.text_input("Simulated User Speech (e.g., 'Tuesday', 'hang on checking my diary', 'yes'):")
-        pause_duration = st.slider("Simulated Silence / Pause Before Speaking (seconds):", 0, 20, 2)
-        submitted = st.form_submit_button("Send Turn")
-        if submitted:
-            process_user_turn(simulated_speech, pause_duration)
-            st.rerun()
+    
 
 with col_inspector:
     st.subheader("System State Inspector")
@@ -230,12 +233,3 @@ with col_inspector:
     st.metric("Repeat Counter", st.session_state.repeat_counter)
     st.markdown(f"**Current State:** `{st.session_state.step}`")
     st.markdown(f"**System Inference:** {st.session_state.inferred_state}")
-
-    st.divider()
-    st.markdown("**Quick Storyboard Test Presets:**")
-    if st.button("Test Storyboard 1: 15s Silence, Slow Down"):
-        process_user_turn("", 15)
-        st.rerun()
-    if st.button("Test Storyboard 2: 'Hang on, checking diary'"):
-        process_user_turn("hang on, let me check my diary", 12)
-        st.rerun()
